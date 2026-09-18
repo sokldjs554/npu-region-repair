@@ -5,8 +5,6 @@
 
 [![tests](https://github.com/sokldjs554/npu-region-repair/actions/workflows/tests.yml/badge.svg)](https://github.com/sokldjs554/npu-region-repair/actions/workflows/tests.yml) [![Compiler](https://img.shields.io/badge/compiler-Vela%205.1.0-informational)](#what-was-measured) [![Hardware](https://img.shields.io/badge/NPU%20hardware-not%20measured-lightgrey)](#scope-and-limits)
 
-![NPU Region Repair result dashboard](docs/preview.png)
-
 ## Why this project
 
 INT8 모델이라고 해서 모든 연산이 NPU에서 실행되는 것은 아닙니다. 연산 종류와 shape가 타깃 컴파일러의 지원 범위를 벗어나면 그래프 일부가 CPU에 남고, NPU 실행 구간도 여러 조각으로 나뉠 수 있습니다.
@@ -90,10 +88,9 @@ FP32 CPU → INT8 TFLite CPU → Vela compile topology
 
 - **Result dashboard:** [`docs/index.html`](docs/index.html)
 - **Detailed experiment result:** [`docs/NATURAL_RESULTS.md`](docs/NATURAL_RESULTS.md)
-- **Slim machine-readable evidence:** [`docs/results/aggregate.json`](docs/results/aggregate.json)
+- **Machine-readable summary:** [`docs/results/summary.json`](docs/results/summary.json)
 - **Per-model table:** [`docs/results/records.csv`](docs/results/records.csv)
 - **Protocol:** [`docs/NATURAL_STUDY.md`](docs/NATURAL_STUDY.md)
-- **Prior compiler probe:** [`docs/COMPILER_OBSERVED.md`](docs/COMPILER_OBSERVED.md)
 - **Related work / novelty boundary:** [`docs/RELATED.md`](docs/RELATED.md)
 - **Validation snapshot:** [`docs/VALIDATION.md`](docs/VALIDATION.md)
 
@@ -115,15 +112,7 @@ python -m pytest -q -rs
 python tools/run_natural_study.py --install --session runs/natural-study
 ```
 
-The notebook version is [`notebooks/natural_image_study.ipynb`](notebooks/natural_image_study.ipynb). The external compiler path uses TensorFlow 2.20.0 and `ethos-u-vela==5.1.0`.
-
-### Saved-model compiler probe
-
-```bash
-python tools/run_external_probe.py --install --session runs/external-probe
-```
-
-This probe uses the compact pilot artifacts under `verification/pilot-final-seed17/`. It does not retrain them before compilation.
+The external compiler path uses TensorFlow 2.20.0 and `ethos-u-vela==5.1.0`.
 
 ## Repository layout
 
@@ -131,11 +120,9 @@ This probe uses the compact pilot artifacts under `verification/pilot-final-seed
 src/nrr/             first comparison + compiler bridge
 src/nrr_natural/     CIFAR-10 repeated-seed study
 configs/             frozen experiment configuration
-notebooks/           self-contained Colab/CPU execution notebooks
 tools/               repeatable study launchers
 tests/               CPU, data split, conversion contract and guard tests
 docs/                result dashboard, protocol, limits and related work
-verification/        compact pilot evidence required by tests/probe
 ```
 
 ## Scope and limits

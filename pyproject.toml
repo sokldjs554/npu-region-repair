@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "npu-region-repair"
+version = "0.5.0"
+description = "Budget-accounted region replacement experiments with explicit compiler evidence gates"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26,<3", "torch>=2.6,<2.11", "scikit-learn>=1.4,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+vela = ["tensorflow==2.20.0", "ethos-u-vela==5.1.0"]
+
+[project.scripts]
+nrr = "nrr.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

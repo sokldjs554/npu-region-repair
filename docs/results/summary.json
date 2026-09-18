@@ -1,0 +1,28 @@
+{
+  "schema": "nrr.public-summary.v1",
+  "status": "observed",
+  "external_compiler_executed": true,
+  "npu_hardware_executed": false,
+  "expected_models": 33,
+  "observed_records": 33,
+  "seeds": [17,29,43],
+  "budgets": [80,320],
+  "data": {"dataset":"CIFAR-10 official binary","train_subset":10000,"validation":2000,"test":10000},
+  "compiler": {"name":"Vela","version":"5.1.0","target":"ethos-u55-256"},
+  "topology": {
+    "teacher":{"host_ops":6,"npu_partitions":7,"boundaries":12},
+    "operatorwise":{"host_ops":0,"npu_partitions":1,"boundaries":0},
+    "regionwise":{"host_ops":0,"npu_partitions":1,"boundaries":0},
+    "small_student":{"host_ops":0,"npu_partitions":1,"boundaries":0}
+  },
+  "regionwise":{"parameters_before":7690,"parameters_after":5674,"parameter_reduction_pct":26.22,"cycles_vs_operatorwise_reduction_pct":6.55},
+  "accuracy_mean_sd_pct": {
+    "80":{"continuation":{"mean_pct":48.82,"sd_pct":1.07},"operatorwise":{"mean_pct":46.97,"sd_pct":0.89},"regionwise":{"mean_pct":42.5,"sd_pct":1.72},"single_region":{"mean_pct":46.34,"sd_pct":1.25},"small_student":{"mean_pct":40.49,"sd_pct":0.17}},
+    "320":{"continuation":{"mean_pct":49.24,"sd_pct":1.35},"operatorwise":{"mean_pct":48.86,"sd_pct":1.72},"regionwise":{"mean_pct":46.08,"sd_pct":1.33},"single_region":{"mean_pct":48.55,"sd_pct":1.48},"small_student":{"mean_pct":46.91,"sd_pct":0.42}}
+  },
+  "paired_regionwise_delta_pp": {
+    "80":{"operatorwise":{"seed_deltas_pp":[-5.29,-1.85,-6.28],"mean_delta_pp":-4.47},"small_student":{"seed_deltas_pp":[1.88,3.88,0.26],"mean_delta_pp":2.01}},
+    "320":{"operatorwise":{"seed_deltas_pp":[-3.67,-0.16,-4.52],"mean_delta_pp":-2.78},"small_student":{"seed_deltas_pp":[0.2,0.15,-2.83],"mean_delta_pp":-0.83}}
+  },
+  "scope":"controlled small-CNN study; Vela estimates are not hardware latency/energy measurements"
+}
