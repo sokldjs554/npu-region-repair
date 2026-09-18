@@ -5,6 +5,14 @@
 
 [![tests](https://github.com/sokldjs554/npu-region-repair/actions/workflows/tests.yml/badge.svg)](https://github.com/sokldjs554/npu-region-repair/actions/workflows/tests.yml) [![Compiler](https://img.shields.io/badge/compiler-Vela%205.1.0-informational)](#what-was-measured) [![Hardware](https://img.shields.io/badge/NPU%20hardware-not%20measured-lightgrey)](#scope-and-limits)
 
+## 30-second summary
+
+- **Problem:** INT8 모델인데도 Vela 컴파일 결과에서 CPU fallback 6개와 NPU partition 7개가 남았습니다.
+- **Method:** 연산자 대체, 연결 구간 대체, 한 구간 대체, 동일 크기 학생 모델을 같은 회복 학습 예산으로 비교했습니다.
+- **Result:** region-wise는 host op를 0으로 만들고 파라미터를 **26.22% 감소**시켰습니다. 낮은 예산에서는 same-size student보다 평균 **+2.01%p**, 높은 예산에서는 **-0.83%p**로 이점이 사라졌습니다.
+- **Interpretation:** 한 방법의 우위를 주장하기보다 **정확도·모델 크기·적응 예산·컴파일 구조의 trade-off**를 확인한 프로젝트입니다.
+- **Scope:** Arm Vela 컴파일 관측이며, 실제 Mobilint NPU latency/power 측정은 아닙니다.
+
 ## Why this project
 
 INT8 모델이라고 해서 모든 연산이 NPU에서 실행되는 것은 아닙니다. 연산 종류와 shape가 타깃 컴파일러의 지원 범위를 벗어나면 그래프 일부가 CPU에 남고, NPU 실행 구간도 여러 조각으로 나뉠 수 있습니다.
