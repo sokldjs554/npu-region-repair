@@ -1,1 +1,316 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NPU Region Repair</title><meta name="description" content="Compiler-guided NPU model repair under limited adaptation budget"><style>:root{--bg:#07111c;--p:#0e1b29;--l:#23384b;--t:#edf5fb;--m:#9eb2c2;--a:#62d3ff;--g:#b9f28c}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#102a40 0,transparent 38%),var(--bg);color:var(--t);font:15px/1.65 system-ui,-apple-system,sans-serif}.w{width:min(1100px,calc(100% - 32px));margin:auto}header{padding:72px 0 42px}nav{padding:16px 0;border-bottom:1px solid var(--l)}nav a{color:var(--t);text-decoration:none;font-weight:800}.e{color:var(--a);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(38px,7vw,68px);line-height:1.03;letter-spacing:-.05em;margin:14px 0 20px}.lead{font-size:19px;color:#c8d6e0;max-width:830px}.notice{margin:24px 0;padding:14px 16px;border:1px solid #32506a;border-radius:12px;background:#0b1b29}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:34px}.metric,.card{background:var(--p);border:1px solid var(--l);border-radius:15px;padding:20px}.metric strong{display:block;font-size:29px;color:var(--g)}section{padding:48px 0}h2{font-size:30px;margin:0 0 12px}.muted{color:var(--m)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}table{width:100%;border-collapse:collapse;background:var(--p);border:1px solid var(--l)}th,td{padding:11px;border-bottom:1px solid var(--l);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--m);font-size:12px}.scroll{overflow:auto}.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.btn{padding:9px 13px;border:1px solid var(--l);border-radius:9px;text-decoration:none;color:var(--t);background:var(--p)}.btn.primary{background:var(--a);color:#061a26;border-color:var(--a);font-weight:800}.warn{border-left:3px solid #ffd479;padding:12px 15px;background:#151c20}.scope{display:grid;grid-template-columns:1fr 1fr;gap:12px}footer{padding:40px 0 70px;color:var(--m);border-top:1px solid var(--l)}@media(max-width:800px){.metrics,.grid,.scope{grid-template-columns:1fr 1fr}}@media(max-width:520px){.metrics,.grid,.scope{grid-template-columns:1fr}header{padding-top:50px}}</style></head><body><nav><div class="w"><a href="#">NPU Region Repair</a></div></nav><header><div class="w"><div class="e">Compiler-guided model adaptation · CIFAR-10 · 3 seeds</div><h1>CPU fallback을 없앤 뒤,<br>얼마나 빨리 정확도를 회복하는가?</h1><p class="lead">Vela에서 실제 혼합 CPU/NPU 실행을 관측하고, 연산자 대체·연결 구간 대체·동일 크기 학생 모델을 같은 적응 예산 규칙으로 비교했습니다.</p><div class="notice"><b>범위:</b> 정확도는 PyTorch/TFLite CPU, NPU 구간은 Vela 컴파일 결과입니다. 실제 NPU latency·energy는 측정하지 않았습니다.</div><div class="metrics"><div class="metric"><span class="muted">Host ops</span><strong>6 → 0</strong><span>region-wise</span></div><div class="metric"><span class="muted">Parameters</span><strong>−26.22%</strong><span>7,690 → 5,674</span></div><div class="metric"><span class="muted">Budget 80</span><strong>+2.01%p</strong><span>region vs same-size student</span></div><div class="metric"><span class="muted">Budget 320</span><strong>−0.83%p</strong><span>advantage disappears</span></div></div><div class="cta"><a class="btn primary" href="NATURAL_RESULTS.md">상세 결과</a><a class="btn" href="results/summary.json">요약 JSON</a><a class="btn" href="results/records.csv">33개 모델 CSV</a></div></div></header><section><div class="w"><div class="e">Methods</div><h2>Fallback 제거 자체는 한 가지 방법만의 장점이 아니었습니다</h2><div class="grid"><div class="card"><b>Operator-wise</b><p class="muted">지원되지 않는 연산만 교체. host op 0, 모델 크기는 유지.</p></div><div class="card"><b>Region-wise</b><p class="muted">연결 구간을 더 작은 block으로 교체. host op 0, 파라미터 26.22% 감소.</p></div><div class="card"><b>Small student</b><p class="muted">Region-wise와 같은 크기를 새로 학습한 강한 baseline. host op 0.</p></div></div></div></section><section><div class="w"><div class="e">Observed accuracy</div><h2>가중치 재사용의 이점은 적응 예산에 따라 달라졌습니다</h2><div class="scroll"><table><thead><tr><th>Budget</th><th>Continuation</th><th>Operator-wise</th><th>Region-wise</th><th>Single region</th><th>Small student</th></tr></thead><tbody><tr><td>80</td><td>48.82 ± 1.07%</td><td>46.97 ± 0.89%</td><td><b>42.50 ± 1.72%</b></td><td>46.34 ± 1.25%</td><td>40.49 ± 0.17%</td></tr><tr><td>320</td><td>49.24 ± 1.35%</td><td>48.86 ± 1.72%</td><td><b>46.08 ± 1.33%</b></td><td>48.55 ± 1.48%</td><td>46.91 ± 0.42%</td></tr></tbody></table></div><p class="muted">TFLite CPU 정확도, 시드 3개 평균 ± 시드 표준편차. 같은 test set을 독립 표본처럼 합치지 않습니다.</p><div class="warn"><b>Negative result도 유지:</b> Operator-wise는 두 예산에서 Region-wise보다 정확도가 높았습니다. Region-wise의 이점은 더 작은 모델과 낮은 Vela 추정 cycle이며, 낮은 예산에서 same-size student보다 빠르게 회복한 조건부 결과입니다.</div></div></section><section><div class="w"><div class="e">Evidence</div><h2>측정 출처를 분리했습니다</h2><div class="scope"><div class="card"><b>Measured / observed</b><ul><li>FP32: PyTorch CPU</li><li>INT8 accuracy: TFLite BUILTIN_REF CPU</li><li>host op / partitions: Vela compiled graph</li><li>33/33 모델 완료, 오류 0</li></ul></div><div class="card"><b>Not measured</b><ul><li>실제 NPU latency</li><li>실제 NPU energy/power</li><li>Mobilint SDK/hardware</li><li>고객 데이터·고객 모델</li></ul></div></div></div></section><section><div class="w"><div class="e">Reproduce</div><h2>고정 프로토콜과 공개 소스</h2><p class="muted">시드 17/29/43, teacher 3,000 updates, adaptation budget 80/320, validation-only checkpoint selection, TensorFlow 2.20.0 + Vela 5.1.0 (`ethos-u55-256`).</p><div class="cta"><a class="btn" href="NATURAL_STUDY.md">프로토콜</a><a class="btn" href="RELATED.md">선행연구 경계</a><a class="btn" href="VALIDATION.md">검증 범위</a></div></div></section><footer><div class="w">NPU Region Repair · controlled model-adaptation study · actual NPU hardware not measured</div></footer></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NPU Region Repair · Results Workbench</title>
+<meta name="description" content="Interactive explorer for observed NPU Region Repair experiment results">
+<style>
+:root{--bg:#07111c;--panel:#0e1b29;--panel2:#102638;--line:#28435a;--text:#edf5fb;--muted:#9eb2c2;--cyan:#62d3ff;--lime:#b9f28c;--amber:#ffd479;--red:#ff8a8a}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 88% 0,#112c43 0,transparent 34%),var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,select{font:inherit}
+a{color:var(--cyan)}
+.shell{width:min(1180px,calc(100% - 28px));margin:auto}
+nav{position:sticky;top:0;z-index:20;background:rgba(7,17,28,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.navrow{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:62px}
+.brand{font-weight:850;letter-spacing:-.02em}
+.navlinks{display:flex;gap:8px;flex-wrap:wrap}
+.navlinks button{border:1px solid transparent;background:transparent;color:var(--muted);padding:8px 11px;border-radius:9px;cursor:pointer}
+.navlinks button.active,.navlinks button:hover{color:var(--text);border-color:var(--line);background:var(--panel)}
+.hero{padding:62px 0 34px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+h1{font-size:clamp(38px,6vw,66px);line-height:1.03;letter-spacing:-.05em;margin:14px 0 18px}
+h2{font-size:30px;letter-spacing:-.025em;margin:0 0 10px}
+h3{margin:0 0 8px}
+.lead{max-width:880px;font-size:19px;color:#c7d6e1}
+.badges{display:flex;gap:9px;flex-wrap:wrap;margin:24px 0}
+.badge{border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:var(--muted);background:#0a1824}
+.badge strong{color:var(--text)}
+.badge.warn{border-color:#6a5427;color:#f7d98f}
+.guide{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0}
+.guide .step,.card,.metric,.controls,.topobox,.tablewrap,.callout{background:var(--panel);border:1px solid var(--line);border-radius:15px}
+.step{padding:18px}
+.step b{display:block;color:var(--cyan);font-size:12px;margin-bottom:6px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.metric{padding:18px}
+.metric small{color:var(--muted)}
+.metric strong{display:block;font-size:29px;color:var(--lime);margin-top:5px}
+main{padding-bottom:70px}
+.view{display:none;padding:36px 0 10px}
+.view.active{display:block}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card{padding:20px}
+.card p{color:var(--muted);margin:8px 0 0}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px;margin:20px 0}
+.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+.field select{width:100%;background:#0a1621;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px}
+.compare-grid{display:grid;grid-template-columns:1fr 70px 1fr;gap:12px;align-items:stretch}
+.compare-card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:21px}
+.compare-card .method{font-size:20px;font-weight:800}
+.delta{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center}
+.statlist{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+.stat{padding:11px;background:#091621;border:1px solid #1f3446;border-radius:10px}
+.stat small{display:block;color:var(--muted)}
+.stat b{font-size:18px}
+.barsection{margin-top:24px}
+.barrow{display:grid;grid-template-columns:135px 1fr 95px;align-items:center;gap:10px;margin:10px 0}
+.bartrack{height:22px;background:#091621;border:1px solid #20384b;border-radius:999px;overflow:hidden}
+.bar{height:100%;background:linear-gradient(90deg,var(--cyan),#8ddcff);border-radius:999px}
+.bar.region{background:linear-gradient(90deg,var(--lime),#d5ffad)}
+.topology{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.topobox{padding:21px}
+.topobox header{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:15px}
+.topobox .count{font-size:12px;color:var(--muted)}
+.lanes{display:flex;gap:5px;flex-wrap:wrap}
+.node{min-width:40px;padding:10px 8px;border-radius:8px;text-align:center;font-size:11px;font-weight:800}
+.node.npu{background:var(--cyan);color:#062033}
+.node.cpu{background:var(--amber);color:#352402}
+.note{color:var(--muted);font-size:13px;margin-top:12px}
+.callout{padding:16px 18px;margin-top:15px;border-left:3px solid var(--amber)}
+.tablewrap{overflow:auto;margin-top:18px}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{padding:11px 12px;border-bottom:1px solid #1d3345;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-size:12px;background:#0b1925;position:sticky;top:0}
+.rowbtn{cursor:pointer}
+.rowbtn:hover td{background:#102638}
+.detail{margin-top:16px;background:#091621;border:1px solid var(--line);border-radius:12px;padding:16px;white-space:pre-wrap}
+.scope{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.checks{margin:0;padding-left:18px}
+.checks li{margin:7px 0}
+.code{display:flex;gap:8px;align-items:center;margin-top:15px}
+.code pre{margin:0;flex:1;overflow:auto;background:#06101a;border:1px solid var(--line);padding:13px;border-radius:10px;color:#d8e7f2}
+.copy{background:var(--cyan);color:#052033;border:0;border-radius:9px;padding:10px 13px;font-weight:800;cursor:pointer}
+footer{border-top:1px solid var(--line);color:var(--muted);padding:30px 0 60px}
+.loading{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+@media(max-width:860px){.metrics,.guide,.grid3,.controls,.scope{grid-template-columns:1fr 1fr}.compare-grid{grid-template-columns:1fr}.delta{padding:3px}.topology{grid-template-columns:1fr}}
+@media(max-width:560px){.metrics,.guide,.grid3,.controls,.scope{grid-template-columns:1fr}.navrow{align-items:flex-start;padding:12px 0;flex-direction:column}.navlinks{width:100%;overflow:auto;flex-wrap:nowrap}.hero{padding-top:42px}.statlist{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr 72px}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="shell navrow">
+    <div class="brand">NPU Region Repair · Results Workbench</div>
+    <div class="navlinks">
+      <button class="active" data-view="overview">30초 요약</button>
+      <button data-view="compare">모델 비교</button>
+      <button data-view="topology">컴파일 구조</button>
+      <button data-view="evidence">근거 / 재현</button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero shell">
+  <div class="eyebrow">Observed run explorer · not live training</div>
+  <h1>CPU fallback을 발견한 뒤,<br>모델을 어떻게 바꿨는지 직접 비교합니다.</h1>
+  <p class="lead">이 페이지는 브라우저에서 새 모델을 학습하거나 NPU를 실행하는 앱이 아닙니다. 이미 완료한 <b>33개 관측 결과</b>를 seed·budget·방법별로 탐색하고, 모델 변경 전후의 정확도·크기·CPU fallback·Vela partition을 비교하는 인터랙티브 결과 Workbench입니다.</p>
+  <div class="badges">
+    <span class="badge"><strong>33/33</strong> models completed</span>
+    <span class="badge"><strong>3</strong> seeds · <strong>2</strong> budgets</span>
+    <span class="badge"><strong>Vela 5.1.0</strong> · ethos-u55-256</span>
+    <span class="badge warn">실제 NPU latency / power 미측정</span>
+  </div>
+  <div class="guide">
+    <div class="step"><b>1 · 비교 조건 선택</b>Seed와 recovery budget, 두 방법을 고릅니다.</div>
+    <div class="step"><b>2 · 결과 비교</b>TFLite CPU 정확도, 파라미터, host op, partition, Vela estimate를 같이 봅니다.</div>
+    <div class="step"><b>3 · 근거 확인</b>33개 모델 CSV와 프로토콜, 재현 명령까지 바로 확인합니다.</div>
+  </div>
+</header>
+
+<main class="shell">
+<section id="overview" class="view active">
+  <div class="metrics">
+    <div class="metric"><small>Host ops · region-wise</small><strong>6 → 0</strong><span>compiler-observed</span></div>
+    <div class="metric"><small>Parameters</small><strong>−26.22%</strong><span>7,690 → 5,674</span></div>
+    <div class="metric"><small>Budget 80</small><strong>+2.01%p</strong><span>region vs same-size student</span></div>
+    <div class="metric"><small>Budget 320</small><strong>−0.83%p</strong><span>advantage disappears</span></div>
+  </div>
+  <div style="height:26px"></div>
+  <div class="eyebrow">Question</div>
+  <h2>지원되지 않는 연산을 없애면서 정확도와 크기를 어떻게 지킬까?</h2>
+  <div class="grid3">
+    <div class="card"><h3>Operator-wise</h3><p>미지원 연산만 교체. 정확도는 상대적으로 높지만 모델 크기는 유지됩니다.</p></div>
+    <div class="card"><h3>Region-wise</h3><p>연결된 구간 전체를 작은 block으로 교체. host op 0과 파라미터 감소를 함께 얻었습니다.</p></div>
+    <div class="card"><h3>Small student</h3><p>Region-wise와 같은 크기를 새로 학습한 baseline. 기존 가중치 재사용의 가치를 확인하기 위한 대조군입니다.</p></div>
+  </div>
+  <div class="callout"><b>핵심 해석:</b> Region-wise가 항상 우수한 것은 아닙니다. 정확도는 Operator-wise가 높았고, Region-wise의 장점은 더 작은 모델·낮은 Vela 추정 비용과 낮은 적응 예산에서의 빠른 회복이었습니다.</div>
+</section>
+
+<section id="compare" class="view">
+  <div class="eyebrow">Interactive comparison</div>
+  <h2>실제 관측된 모델 두 개를 나란히 비교</h2>
+  <p class="lead" style="font-size:16px">선택을 바꾸면 아래 값이 33개 결과 CSV에서 즉시 갱신됩니다. 브라우저에서 재학습하는 기능이 아니라 <b>관측 결과 탐색</b>입니다.</p>
+  <div id="loadState" class="loading">결과 데이터를 불러오는 중…</div>
+  <div id="compareUI" hidden>
+    <div class="controls">
+      <div class="field"><label>Seed</label><select id="seed"></select></div>
+      <div class="field"><label>Recovery budget</label><select id="budget"></select></div>
+      <div class="field"><label>Method A</label><select id="methodA"></select></div>
+      <div class="field"><label>Method B</label><select id="methodB"></select></div>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card" id="cardA"></div>
+      <div class="delta" id="delta"></div>
+      <div class="compare-card" id="cardB"></div>
+    </div>
+    <div class="barsection">
+      <div class="eyebrow">3-seed mean · selected budget</div>
+      <h3 style="margin-top:6px">TFLite CPU accuracy</h3>
+      <div id="bars"></div>
+    </div>
+  </div>
+</section>
+
+<section id="topology" class="view">
+  <div class="eyebrow">Compiler topology</div>
+  <h2>원형과 선택 모델의 CPU/NPU 분할을 비교</h2>
+  <p class="lead" style="font-size:16px">아래 그림은 <b>host op / partition count 수준의 요약 시각화</b>입니다. 정확한 op-by-op 컴파일 그래프를 재현하는 그림은 아닙니다.</p>
+  <div class="controls" style="grid-template-columns:repeat(3,1fr)">
+    <div class="field"><label>Seed</label><select id="topSeed"></select></div>
+    <div class="field"><label>Budget</label><select id="topBudget"></select></div>
+    <div class="field"><label>Adaptation method</label><select id="topMethod"></select></div>
+  </div>
+  <div class="topology">
+    <div class="topobox" id="teacherTopo"></div>
+    <div class="topobox" id="adaptTopo"></div>
+  </div>
+  <div class="callout"><b>읽는 법:</b> 원형에서 CPU에 남던 연산이 사라지고 NPU partition이 줄었는지 확인합니다. 이 값은 Arm Vela 컴파일 결과이며 실제 Mobilint NPU 실행 결과가 아닙니다.</div>
+</section>
+
+<section id="evidence" class="view">
+  <div class="eyebrow">Evidence & reproducibility</div>
+  <h2>무엇을 측정했고, 무엇을 측정하지 않았는지</h2>
+  <div class="scope">
+    <div class="card"><h3>Measured / observed</h3><ul class="checks"><li>FP32 accuracy · PyTorch CPU</li><li>INT8 accuracy · TFLite BUILTIN_REF CPU</li><li>host op / NPU partition · Vela compiled graph</li><li>33/33 selected models completed</li></ul></div>
+    <div class="card"><h3>Not measured</h3><ul class="checks"><li>실제 NPU latency</li><li>실제 NPU energy / power</li><li>Mobilint SDK / hardware</li><li>실제 고객 데이터 / 고객 모델</li></ul></div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Seed / Method</th><th>Budget</th><th>TFLite acc.</th><th>Params</th><th>Host ops</th><th>NPU partitions</th><th>Vela cycles*</th></tr></thead>
+      <tbody id="recordsBody"></tbody>
+    </table>
+  </div>
+  <div class="detail" id="rowDetail">행을 클릭하면 해당 결과의 상세 값이 표시됩니다.</div>
+  <div class="code">
+    <pre id="cmd">python tools/run_natural_study.py --install --session runs/natural-study</pre>
+    <button class="copy" id="copy">명령 복사</button>
+  </div>
+  <div class="badges">
+    <a class="badge" href="NATURAL_RESULTS.md">상세 결과</a>
+    <a class="badge" href="results/summary.json">요약 JSON</a>
+    <a class="badge" href="results/records.csv">33개 모델 CSV</a>
+    <a class="badge" href="NATURAL_STUDY.md">프로토콜</a>
+    <a class="badge" href="RELATED.md">선행연구 경계</a>
+    <a class="badge" href="VALIDATION.md">검증 범위</a>
+    <a class="badge" href="https://github.com/sokldjs554/npu-region-repair">GitHub source</a>
+  </div>
+</section>
+</main>
+
+<footer><div class="shell">NPU Region Repair · observed-results workbench · actual NPU hardware not measured</div></footer>
+
+<script>
+const methods=["continuation","operatorwise","regionwise","single_region","small_student"];
+const labels={continuation:"Continuation",operatorwise:"Operator-wise",regionwise:"Region-wise",single_region:"Single region",small_student:"Small student",teacher:"Teacher"};
+let records=[],summary=null;
+
+function parseCSV(text){
+  const lines=text.trim().split(/\r?\n/), headers=lines.shift().split(",");
+  return lines.map(line=>{
+    const vals=line.split(","), o={};
+    headers.forEach((h,i)=>o[h]=vals[i]);
+    ["seed","budget_steps","parameters","fp32_accuracy_pct","tflite_accuracy_pct","host_operator_count","npu_partition_count","boundary_tensor_count","nn_macs","cycles_total","sram_memory_used_kib"].forEach(k=>{
+      if(o[k]!=="" && o[k]!=null) o[k]=Number(o[k]); else o[k]=null;
+    });
+    return o;
+  });
+}
+function q(id){return document.getElementById(id)}
+function fill(sel,values,labelFn=v=>v){
+  sel.replaceChildren();
+  values.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=labelFn(v);sel.appendChild(o)});
+}
+function find(seed,budget,method){
+  return records.find(r=>r.seed===Number(seed)&&r.method===method&&(method==="teacher"||r.budget_steps===Number(budget)));
+}
+function statCard(r){
+  if(!r)return '<div class="method">결과 없음</div>';
+  return `<div class="method">${labels[r.method]}</div>
+    <div class="statlist">
+      <div class="stat"><small>TFLite CPU accuracy</small><b>${r.tflite_accuracy_pct.toFixed(2)}%</b></div>
+      <div class="stat"><small>Parameters</small><b>${r.parameters.toLocaleString()}</b></div>
+      <div class="stat"><small>Host ops</small><b>${r.host_operator_count}</b></div>
+      <div class="stat"><small>NPU partitions</small><b>${r.npu_partition_count}</b></div>
+      <div class="stat"><small>Vela cycles*</small><b>${r.cycles_total.toLocaleString()}</b></div>
+      <div class="stat"><small>SRAM estimate</small><b>${r.sram_memory_used_kib.toFixed(1)} KiB</b></div>
+    </div>`;
+}
+function updateCompare(){
+  const a=find(q("seed").value,q("budget").value,q("methodA").value);
+  const b=find(q("seed").value,q("budget").value,q("methodB").value);
+  q("cardA").innerHTML=statCard(a);q("cardB").innerHTML=statCard(b);
+  if(a&&b){
+    const d=a.tflite_accuracy_pct-b.tflite_accuracy_pct;
+    q("delta").innerHTML=`A − B<br><b style="color:${d>=0?'var(--lime)':'var(--amber)'}">${d>=0?'+':''}${d.toFixed(2)}%p</b>`;
+  }
+  renderBars(Number(q("budget").value));
+}
+function renderBars(budget){
+  const block=summary.accuracy_mean_sd_pct[String(budget)], host=q("bars");host.replaceChildren();
+  methods.forEach(m=>{
+    const row=document.createElement("div");row.className="barrow";
+    const val=block[m].mean_pct; const pct=Math.max(0,Math.min(100,(val-35)/20*100));
+    row.innerHTML=`<div>${labels[m]}</div><div class="bartrack"><div class="bar ${m==="regionwise"?"region":""}" style="width:${pct}%"></div></div><div style="text-align:right">${val.toFixed(2)}%</div>`;
+    host.appendChild(row);
+  });
+}
+function topologyHTML(r,title){
+  const nodes=[];
+  if(r.method==="teacher"||r.method==="continuation"){
+    for(let i=0;i<7;i++){nodes.push('<span class="node npu">NPU</span>'); if(i<6)nodes.push('<span class="node cpu">CPU</span>')}
+  } else if(r.method==="single_region"){
+    for(let i=0;i<4;i++){nodes.push('<span class="node npu">NPU</span>'); if(i<3)nodes.push('<span class="node cpu">CPU</span>')}
+  } else {nodes.push('<span class="node npu" style="flex:1;min-width:180px">NPU · single compiled region</span>')}
+  return `<header><div><div class="eyebrow">${title}</div><h3>${labels[r.method]}</h3></div><div class="count">host ${r.host_operator_count} · partition ${r.npu_partition_count} · boundary ${r.boundary_tensor_count}</div></header><div class="lanes">${nodes.join("")}</div><div class="note">TFLite acc. ${r.tflite_accuracy_pct.toFixed(2)}% · params ${r.parameters.toLocaleString()} · cycles* ${r.cycles_total.toLocaleString()}</div>`;
+}
+function updateTopology(){
+  const seed=q("topSeed").value,b=q("topBudget").value,m=q("topMethod").value;
+  const teacher=find(seed,b,"teacher"), adapt=find(seed,b,m);
+  q("teacherTopo").innerHTML=topologyHTML(teacher,"BEFORE");
+  q("adaptTopo").innerHTML=topologyHTML(adapt,"AFTER");
+}
+function renderTable(){
+  const body=q("recordsBody");body.replaceChildren();
+  records.forEach(r=>{
+    const tr=document.createElement("tr");tr.className="rowbtn";
+    tr.innerHTML=`<td>${r.seed} · ${labels[r.method]}</td><td>${r.budget_steps??"—"}</td><td>${r.tflite_accuracy_pct.toFixed(2)}%</td><td>${r.parameters.toLocaleString()}</td><td>${r.host_operator_count}</td><td>${r.npu_partition_count}</td><td>${r.cycles_total.toLocaleString()}</td>`;
+    tr.addEventListener("click",()=>q("rowDetail").textContent=JSON.stringify(r,null,2));
+    body.appendChild(tr);
+  });
+}
+async function init(){
+  try{
+    const [s,c]=await Promise.all([fetch("results/summary.json"),fetch("results/records.csv")]);
+    if(!s.ok||!c.ok)throw new Error("result files could not be loaded");
+    summary=await s.json();records=parseCSV(await c.text());
+    [q("seed"),q("topSeed")].forEach(x=>fill(x,summary.seeds));
+    [q("budget"),q("topBudget")].forEach(x=>fill(x,summary.budgets));
+    [q("methodA"),q("methodB"),q("topMethod")].forEach(x=>fill(x,methods,v=>labels[v]));
+    q("methodA").value="operatorwise";q("methodB").value="regionwise";q("topMethod").value="regionwise";
+    ["seed","budget","methodA","methodB"].forEach(id=>q(id).addEventListener("change",updateCompare));
+    ["topSeed","topBudget","topMethod"].forEach(id=>q(id).addEventListener("change",updateTopology));
+    updateCompare();updateTopology();renderTable();
+    q("loadState").hidden=true;q("compareUI").hidden=false;
+  }catch(e){q("loadState").textContent="결과 파일을 불러오지 못했습니다: "+e.message}
+}
+document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b===btn));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===btn.dataset.view));
+}));
+q("copy").addEventListener("click",async()=>{await navigator.clipboard.writeText(q("cmd").textContent);q("copy").textContent="복사됨";setTimeout(()=>q("copy").textContent="명령 복사",1200)});
+init();
+</script>
+</body>
+</html>
