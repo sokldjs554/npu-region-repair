@@ -15,6 +15,21 @@
 - **해석:** 한 방법의 우위를 주장하기보다 **정확도·모델 크기·적응 예산·컴파일 구조 사이의 trade-off**를 확인한 프로젝트입니다.
 - **범위:** Arm Vela 컴파일 관측이며, 실제 Mobilint NPU latency/power 측정은 아닙니다.
 
+## 왜 이런 비교를 했나
+
+- compiler fallback을 단순 변환 실패가 아니라 **모델 구조를 다시 설계해야 하는 신호**로 봤습니다.
+- operator-wise / region-wise / single-region / same-size student를 같이 둬서 **구조 변경 효과와 weight reuse 효과를 분리**했습니다.
+- 동일 epoch가 아니라 MAC proxy 기반 recovery budget을 써서 서로 다른 크기의 모델을 가능한 한 같은 적응 비용에서 비교했습니다.
+- 모든 checkpoint를 먼저 고정한 뒤 final test를 실행해 **test 결과를 보고 설정을 바꾸는 누수**를 막았습니다.
+
+왜 Vela를 썼는지, 왜 3 seeds × 2 budgets인지, 실제 Mobilint NPU가 있다면 무엇부터 다시 측정할지는 [설계 판단 기록](docs/DESIGN_DECISIONS.md)에 정리했습니다.
+
+### 5분 코드 검토 경로
+
+`protocol.py` → `pipeline.py` → `experiment.py` → `compiler.py` → `tflite_bridge.py` → `summary.json`
+
+각 단계에서 확인할 질문은 [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md#9-5분-코드-검토-경로)에 적었습니다.
+
 ## 문제 정의
 
 INT8 모델이라고 해서 모든 연산이 NPU에서 실행되는 것은 아닙니다. 연산 종류와 shape가 타깃 컴파일러의 지원 범위를 벗어나면 그래프 일부가 CPU에 남고, NPU 실행 구간도 여러 조각으로 나뉠 수 있습니다.
@@ -103,6 +118,7 @@ FP32 CPU → INT8 TFLite CPU → Vela compile topology
 - **실험 프로토콜:** [`docs/NATURAL_STUDY.md`](docs/NATURAL_STUDY.md)
 - **관련 연구 / 차별화 범위:** [`docs/RELATED.md`](docs/RELATED.md)
 - **검증 기록:** [`docs/VALIDATION.md`](docs/VALIDATION.md)
+- **설계 판단 기록:** [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md)
 
 공개 저장소에는 모델별 약 30 MB에 이르는 prediction dump 전체 대신 핵심 검증 자료만 남겼습니다. 전체 실행 번들의 SHA-256은 `docs/NATURAL_RESULTS.md`에 기록되어 있습니다.
 
