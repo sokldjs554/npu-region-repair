@@ -5,6 +5,8 @@
 
 [![tests](https://github.com/sokldjs554/npu-region-repair/actions/workflows/tests.yml/badge.svg)](https://github.com/sokldjs554/npu-region-repair/actions/workflows/tests.yml) [![Compiler](https://img.shields.io/badge/compiler-Vela%205.1.0-informational)](#what-was-measured) [![Hardware](https://img.shields.io/badge/NPU%20hardware-not%20measured-lightgrey)](#scope-and-limits)
 
+**Live Workbench:** <https://sokldjs554.github.io/npu-region-repair/> — 저장된 33개 모델 결과를 seed, recovery budget, method별로 비교할 수 있습니다.
+
 ## 30-second summary
 
 - **Problem:** INT8 모델인데도 Vela 컴파일 결과에서 CPU fallback 6개와 NPU partition 7개가 남았습니다.
