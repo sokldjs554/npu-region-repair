@@ -34,3 +34,25 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify public site
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${SITE_URL%/}" = 'https://sokldjs554.github.io/npu-region-repair'
+          for rel in '' index.html results/summary.json results/records.csv DESIGN_DECISIONS.md VALIDATION.md; do
+            ok=false
+            for attempt in $(seq 1 12); do
+              if curl --fail --silent --show-error --location --connect-timeout 10 --max-time 30                 "${SITE_URL%/}/$rel?publication=$GITHUB_SHA" -o /tmp/nrr-public; then
+                ok=true
+                break
+              fi
+              sleep 10
+            done
+            if [ "$ok" != true ]; then
+              echo "::error::Public file unavailable: ${rel:-/}"
+              exit 1
+            fi
+          done
+          echo "Verified public NPU Region Repair site for $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
